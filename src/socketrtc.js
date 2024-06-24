@@ -28,7 +28,7 @@ class SocketRTC {
     constructor(socketConfig, rtcconfig = {}) {
 
         this.socket = null;
-        this.events = {};
+        this.events = new CustomEvents();
         if (IS_BROWSER) {
             // Browser environment
             this.config = Object.assign({initiator: true}, rtcconfig);
@@ -52,19 +52,11 @@ class SocketRTC {
      * @param {Function} listener - The function to execute when the event is triggered.
      */
     on(event, listener) {
-        // If the event doesn't exist in the events object, create an empty array for it
-        if (!this.events[event]) {
-            this.events[event] = [];
-        }
-        
-        // Add the listener to the event's array of listeners
-        this.events[event].push(listener);
+        this.events.on(event, listener);
     }
 
     emit(event, ...args) {
-        if (this.events[event]) {
-            this.events[event].forEach(callback => callback(...args));
-        }
+        this.events.emit(event, ...args);
     }
 
     initializeServer() {
