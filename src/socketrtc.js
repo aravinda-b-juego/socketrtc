@@ -123,6 +123,25 @@ class SocketRTC {
         }
         this.broadcast = broadcastMessage;
 
+        const to = (clientIds) => {
+            const sendTo = (event, ...args) => {
+                if(Array.isArray(clientIds)) {
+                    for (let i = 0; i < clientIds.length; i++) {
+                        const client = this.clients[clientIds[i]];
+                        if (client && client.connected) {
+                            client.send(JSON.stringify([event, ...args]));
+                        }
+                    }
+                } else {
+                    this.clients[clientIds].send(JSON.stringify([event, ...args]));
+                }
+            };
+
+            return {
+                send: sendTo
+            };
+        }
+        this.to = to;
 
         const except = (id) => {
             // const excludedClient = clients[id];
