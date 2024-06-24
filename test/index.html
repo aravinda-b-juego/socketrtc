@@ -64,7 +64,7 @@
         // };
         function onSend() {
             const message = document.getElementsByClassName('message')[0].value;
-            rtc.send(JSON.stringify({ sender: id, message }));
+            rtc.send('message', message);
             displayMessage('You', message);
             // rtc.emit('message', message)
         }

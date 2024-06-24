@@ -11,21 +11,17 @@ const PORT = 8001;
 app.use(express.static(path.join(__dirname, '../dist')));
 
 const socketRTC = new SocketRTC({ server })
-socketRTC.on('connect', (data) => {
-    console.log('peer connection established: ', data.id);
+
+socketRTC.on('connect', (peer) => {
+    console.log('peer connection established: ', peer.socketId);
+
+    peer.events.on('message', (data) => {
+        console.log('message from peer: ', data);
+    })
 })
 
 socketRTC.on('disconnect', (data) => {
     console.log('peer connection disconnected', data);
-})
-
-// This event listener is bound to the 'message' event on the socketRTC object.
-// When a message is sent from the user, socketRTC emits the 'message' event
-
-socketRTC.on('message', (data) => {
-    console.log(`data: ${data}`)
-    
-    // Handle message from user, eg: storing it for restoring message history
 })
 
 app.get('/', (req, res) => {
