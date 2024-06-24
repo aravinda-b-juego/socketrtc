@@ -107,27 +107,22 @@ class SocketRTC {
             });
         })
 
-        const sendMessage = (data, to = null) => {
-            const pdata = JSON.parse(data);
-            const allClients = Object.keys(clients);
+        const broadcastMessage = (event, ...args) => {
+            const allClients = Object.keys(this.clients);
 
-            if(to != null) {
-                if(clients[to])
-                    clients[to].send(data);
-                return;
-            }
             for (let i = 0; i < allClients.length; i++) {
-                if (allClients[i] !== pdata.sender) {
+                if (allClients[i]) {
                     // console.log(`Sending message from ${pdata.sender} to ${allClients[i]}`)
                     try {
-                        clients[allClients[i]].send(data);
+                        this.clients[allClients[i]].send(JSON.stringify([event, ...args]));
                     } catch (error) {
                         console.log(`error sending to ${allClients[i]}`, error.message)
                     }
                 }
             };
         }
-        this.send = sendMessage;
+        this.broadcast = broadcastMessage;
+
 
         const except = (id) => {
             // const excludedClient = clients[id];
