@@ -6,7 +6,7 @@ module.exports = {
     mode: 'development',
     output: {
         path: path.resolve(__dirname, 'dist'),
-        filename: 'socketrtc.js',
+        filename: 'socketiortc.min.js',
         clean: true,
         library: 'SocketRTC', // name of the library
         libraryTarget: 'umd' // module type
