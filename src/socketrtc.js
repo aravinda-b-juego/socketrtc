@@ -79,7 +79,7 @@ class SocketRTC {
 
             // console.log('socket connected', socket.id);
             peer.on('connect', () => {
-                this.emit('connect', {id, pc: peer});
+                this.emit('connect', peer);
             });
 
             peer.on('signal', (data) => {
