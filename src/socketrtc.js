@@ -1,6 +1,29 @@
 const SimplePeer = require('simple-peer');
 
 const IS_BROWSER = typeof window != 'undefined';
+
+class CustomEvents {
+    constructor() {
+        this.events = {};
+    }
+
+    on(event, listener) {
+        // If the event doesn't exist in the events object, create an empty array for it
+        if (!this.events[event]) {
+            this.events[event] = [];
+        }
+        
+        // Add the listener to the event's array of listeners
+        this.events[event].push(listener);
+    }
+
+    emit(event, ...args) {
+        if (this.events[event]) {
+            this.events[event].forEach(callback => callback(...args));
+        }
+    }
+}
+
 class SocketRTC {
     constructor(socketConfig, rtcconfig = {}) {
 
@@ -51,6 +74,8 @@ class SocketRTC {
             const peer = new SimplePeer(this.config);
             const id = socket.id;
             clients[id] = peer;
+            peer.socketId = id;
+            peer.events = new CustomEvents();
 
             // console.log('socket connected', socket.id);
             peer.on('connect', () => {
