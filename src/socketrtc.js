@@ -40,6 +40,7 @@ class SocketRTC {
             const wrtc = require('wrtc');
             this.config = Object.assign({ wrtc: wrtc }, rtcconfig);
             this.io = require('socket.io')(socketConfig.server);
+            this.clients = {};
             this.initializeServer();
         }
 
@@ -60,15 +61,14 @@ class SocketRTC {
     }
 
     initializeServer() {
-        const clients = {};
         this.io.on('connection', (socket) => {
             this.socket = socket;
             const peer = new SimplePeer(this.config);
             const id = socket.id;
-            clients[id] = peer;
             peer.socketId = id;
             peer.events = new CustomEvents();
 
+            this.clients[id] = peer;
             // console.log('socket connected', socket.id);
             peer.on('connect', () => {
                 this.emit('connect', peer);
@@ -85,7 +85,7 @@ class SocketRTC {
 
             peer.on('close', () => {
                 console.log('peerconnection closed');
-                delete clients[id];
+                delete this.clients[id];
             });
 
             peer.on('error', (err) => {
@@ -98,7 +98,7 @@ class SocketRTC {
 
             socket.on("disconnect", async (event) => {
                 this.emit('disconnect', event);
-                delete clients[id];
+                delete this.clients[id];
                 peer.destroy();
             })
 
@@ -132,7 +132,7 @@ class SocketRTC {
         const except = (id) => {
             // const excludedClient = clients[id];
             const sendExcept = (message) => {
-                Object.entries(clients).forEach(([clientId, client]) => {
+                Object.entries(this.clients).forEach(([clientId, client]) => {
                     if (clientId !== id && client.connected) {
                         client.send(message);
                     }
