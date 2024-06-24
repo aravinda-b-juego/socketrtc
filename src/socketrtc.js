@@ -165,10 +165,8 @@ class SocketRTC {
         });
 
         peer.on('data', (data) => {
-            // const pdata = JSON.parse(data)
-            this.emit('message', data);
-            // console.log(`Received message from ${pdata.from}: ${pdata.data}`);
-            // chatBox.value += 'Peer: ' + data + '\n';
+            const [event, ...args] = JSON.parse(data);
+            this.emit(event, ...args);
         });
 
         peer.on('close', () => {
