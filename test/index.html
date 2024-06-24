@@ -24,7 +24,7 @@
             background-color: #c7e1ff;
         }
     </style>
-   
+   <script src="socketiortc.min.js"></script>
 </head>
 <body>
     <h1>SocketRTC Client</h1>
@@ -41,14 +41,14 @@
         const host = window.location.hostname;
         const port = '8001';
         const url = `${protocol}//${host}:${port}`;
-        script.src = `${url}/socketrtc.js`;
-        document.head.appendChild(script);
+        // script.src = `${url}/socketrtc.js`;
+        // document.head.appendChild(script);
 
 
         let rtc = null;
         let id;
         let chat = document.getElementById('chat');
-        script.onload = () => {
+        // script.onload = () => {
             console.log(id)
             rtc = new SocketRTC({ url });
 
@@ -61,7 +61,7 @@
 
             const sendButton = document.getElementById('sendButton');
             sendButton.addEventListener('click', onSend);
-        };
+        // };
         function onSend() {
             const message = document.getElementsByClassName('message')[0].value;
             rtc.send(JSON.stringify({ sender: id, message }));
