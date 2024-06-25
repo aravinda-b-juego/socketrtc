@@ -17,6 +17,8 @@ socketRTC.on('connect', (peer) => {
 
     peer.events.on('message', (data) => {
         console.log('message from peer: ', data);
+        socketRTC.broadcast('message', data); // broadcast message
+        // socketRTC.to(peer.socketId).send('message', data); // send message to particular peer
     })
 })
 
