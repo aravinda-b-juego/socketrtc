@@ -67,6 +67,9 @@ class SocketRTC {
             const id = socket.id;
             peer.socketId = id;
             peer.events = new CustomEvents();
+            peer.events.send = (event, ...args) => {
+                peer.send(JSON.stringify([event, ...args]));
+            }
 
             this._clients[id] = peer;
             // console.log('socket connected', socket.id);
