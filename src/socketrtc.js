@@ -4,22 +4,22 @@ const IS_BROWSER = typeof window != 'undefined';
 
 class CustomEvents {
     constructor() {
-        this.events = {};
+        this._events = {};
     }
 
     on(event, listener) {
         // If the event doesn't exist in the events object, create an empty array for it
-        if (!this.events[event]) {
-            this.events[event] = [];
+        if (!this._events[event]) {
+            this._events[event] = [];
         }
         
         // Add the listener to the event's array of listeners
-        this.events[event].push(listener);
+        this._events[event].push(listener);
     }
 
     emit(event, ...args) {
-        if (this.events[event]) {
-            this.events[event].forEach(callback => callback(...args));
+        if (this._events[event]) {
+            this._events[event].forEach(callback => callback(...args));
         }
     }
 }
@@ -27,20 +27,20 @@ class CustomEvents {
 class SocketRTC {
     constructor(socketConfig, rtcconfig = {}) {
 
-        this.socket = null;
-        this.events = new CustomEvents();
+        this._socket = null;
+        this._events = new CustomEvents();
         if (IS_BROWSER) {
             // Browser environment
-            this.config = Object.assign({initiator: true}, rtcconfig);
+            this._config = Object.assign({initiator: true}, rtcconfig);
             const socketioclient = require('socket.io-client');
-            this.socket = socketioclient(socketConfig.url);
+            this._socket = socketioclient(socketConfig.url);
             this.initializeClient();
         } else {
             // Node.js environment
             const wrtc = require('wrtc');
-            this.config = Object.assign({ wrtc: wrtc }, rtcconfig);
-            this.io = require('socket.io')(socketConfig.server);
-            this.clients = {};
+            this._config = Object.assign({ wrtc: wrtc }, rtcconfig);
+            this._io = require('socket.io')(socketConfig.server);
+            this._clients = {};
             this.initializeServer();
         }
 
@@ -53,29 +53,29 @@ class SocketRTC {
      * @param {Function} listener - The function to execute when the event is triggered.
      */
     on(event, listener) {
-        this.events.on(event, listener);
+        this._events.on(event, listener);
     }
 
     emit(event, ...args) {
-        this.events.emit(event, ...args);
+        this._events.emit(event, ...args);
     }
 
     initializeServer() {
-        this.io.on('connection', (socket) => {
-            this.socket = socket;
-            const peer = new SimplePeer(this.config);
+        this._io.on('connection', (socket) => {
+            this._socket = socket;
+            const peer = new SimplePeer(this._config);
             const id = socket.id;
             peer.socketId = id;
             peer.events = new CustomEvents();
 
-            this.clients[id] = peer;
+            this._clients[id] = peer;
             // console.log('socket connected', socket.id);
             peer.on('connect', () => {
                 this.emit('connect', peer);
             });
 
             peer.on('signal', (data) => {
-                this.socket.emit('signal', data);
+                this._socket.emit('signal', data);
             });
 
             peer.on('data', (data) => {
@@ -85,7 +85,7 @@ class SocketRTC {
 
             peer.on('close', () => {
                 console.log('peerconnection closed');
-                delete this.clients[id];
+                delete this._clients[id];
             });
 
             peer.on('error', (err) => {
@@ -98,7 +98,7 @@ class SocketRTC {
 
             socket.on("disconnect", async (event) => {
                 this.emit('disconnect', event);
-                delete this.clients[id];
+                delete this._clients[id];
                 peer.destroy();
             })
 
@@ -108,13 +108,13 @@ class SocketRTC {
         })
 
         const broadcastMessage = (event, ...args) => {
-            const allClients = Object.keys(this.clients);
+            const allClients = Object.keys(this._clients);
 
             for (let i = 0; i < allClients.length; i++) {
                 if (allClients[i]) {
                     // console.log(`Sending message from ${pdata.sender} to ${allClients[i]}`)
                     try {
-                        this.clients[allClients[i]].send(JSON.stringify([event, ...args]));
+                        this._clients[allClients[i]].send(JSON.stringify([event, ...args]));
                     } catch (error) {
                         console.log(`error sending to ${allClients[i]}`, error.message)
                     }
@@ -127,13 +127,13 @@ class SocketRTC {
             const sendTo = (event, ...args) => {
                 if(Array.isArray(clientIds)) {
                     for (let i = 0; i < clientIds.length; i++) {
-                        const client = this.clients[clientIds[i]];
+                        const client = this._clients[clientIds[i]];
                         if (client && client.connected) {
                             client.send(JSON.stringify([event, ...args]));
                         }
                     }
                 } else {
-                    this.clients[clientIds].send(JSON.stringify([event, ...args]));
+                    this._clients[clientIds].send(JSON.stringify([event, ...args]));
                 }
             };
 
@@ -146,7 +146,7 @@ class SocketRTC {
         const except = (id) => {
             // const excludedClient = clients[id];
             const sendExcept = (message) => {
-                Object.entries(this.clients).forEach(([clientId, client]) => {
+                Object.entries(this._clients).forEach(([clientId, client]) => {
                     if (clientId !== id && client.connected) {
                         client.send(message);
                     }
@@ -164,18 +164,18 @@ class SocketRTC {
     initializeClient() {
         // const clients = {};
 
-        this.socket.on('connect', () => {
+        this._socket.on('connect', () => {
             // console.log('socket connected');
         });
-        const peer = new SimplePeer(this.config);
+        const peer = new SimplePeer(this._config);
 
         // console.log(peer)
         peer.on('signal', (data) => {
-            this.socket.emit('signal', data);
+            this._socket.emit('signal', data);
         });
 
         peer.on('connect', () => {
-            this.emit('connect', this.socket.id);
+            this.emit('connect', this._socket.id);
         });
 
         peer.on('data', (data) => {
@@ -191,15 +191,15 @@ class SocketRTC {
             this.emit('error', err);
         })
 
-        this.socket.on('signal', (data) => {
+        this._socket.on('signal', (data) => {
             peer.signal(data);
         });
 
-        this.socket.on('disconnect', (event) => {
+        this._socket.on('disconnect', (event) => {
             this.emit('disconnect', event);
         });
 
-        this.socket.on('error', (err) => {
+        this._socket.on('error', (err) => {
             this.emit('error', err);
         });
 
