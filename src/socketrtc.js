@@ -145,17 +145,16 @@ class SocketRTC {
 
         const except = (id) => {
             // const excludedClient = clients[id];
-            const sendExcept = (message) => {
+            const sendExcept = (event, ...args) => {
                 Object.entries(this._clients).forEach(([clientId, client]) => {
                     if (clientId !== id && client.connected) {
-                        client.send(message);
+                        client.send(JSON.stringify([event, ...args]));
                     }
                 });
             };
 
             return {
-                send: sendExcept,
-                emit
+                send: sendExcept
             };
         }
         this.except = except;
