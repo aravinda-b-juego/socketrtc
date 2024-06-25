@@ -56,7 +56,7 @@ class SocketRTC {
         this._events.on(event, listener);
     }
 
-    emit(event, ...args) {
+    _emit(event, ...args) {
         this._events.emit(event, ...args);
     }
 
@@ -71,7 +71,7 @@ class SocketRTC {
             this._clients[id] = peer;
             // console.log('socket connected', socket.id);
             peer.on('connect', () => {
-                this.emit('connect', peer);
+                this._emit('connect', peer);
             });
 
             peer.on('signal', (data) => {
@@ -89,7 +89,7 @@ class SocketRTC {
             });
 
             peer.on('error', (err) => {
-                this.emit('error', err);
+                this._emit('error', err);
             })
 
             socket.on('signal', (data) => {
@@ -97,13 +97,13 @@ class SocketRTC {
             });
 
             socket.on("disconnect", async (event) => {
-                this.emit('disconnect', event);
+                this._emit('disconnect', event);
                 delete this._clients[id];
                 peer.destroy();
             })
 
             socket.on('error', (err) => {
-                this.emit('error', err);
+                this._emit('error', err);
             });
         })
 
@@ -175,12 +175,12 @@ class SocketRTC {
         });
 
         peer.on('connect', () => {
-            this.emit('connect', this._socket.id);
+            this._emit('connect', this._socket.id);
         });
 
         peer.on('data', (data) => {
             const [event, ...args] = JSON.parse(data);
-            this.emit(event, ...args);
+            this._emit(event, ...args);
         });
 
         peer.on('close', () => {
@@ -188,7 +188,7 @@ class SocketRTC {
         });
 
         peer.on('error', (err) => {
-            this.emit('error', err);
+            this._emit('error', err);
         })
 
         this._socket.on('signal', (data) => {
@@ -196,11 +196,11 @@ class SocketRTC {
         });
 
         this._socket.on('disconnect', (event) => {
-            this.emit('disconnect', event);
+            this._emit('disconnect', event);
         });
 
         this._socket.on('error', (err) => {
-            this.emit('error', err);
+            this._emit('error', err);
         });
 
         const sendMessage = (event, ...args) => {
