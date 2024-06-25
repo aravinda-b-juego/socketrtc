@@ -8,7 +8,7 @@ const server = http.createServer(app);
 
 const PORT = 8001;
 
-app.use(express.static(path.join(__dirname, '../dist')));
+app.use(express.static(path.join(__dirname, '../')));
 
 const socketRTC = new SocketRTC({ server })
 
