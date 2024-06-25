@@ -43,13 +43,14 @@ const server = http.createServer(app);
 
 const rtc = new SocketRTC({ server });
 
-rtc.on('connect', ({ id, pc }) => {
-    console.log('Connected to peer with id:', id);
-    rtc.send(JSON.stringify({ from: 'sserver',data: 'Hello, Peer! from node' }));
-});
+rtc.on('connect', (peer) => {
+    console.log('Connected to peer with id:', peer.socketId);
 
-rtc.on('message', (data) => {
-    console.log('Received message:', JSON.parse(data));
+    peer.events.on('message', (data) => {
+        console.log('message from peer: ', data);
+        socketRTC.broadcast('message', data); // broadcast message
+        // socketRTC.to(peer.socketId).send('message', data); // send message to particular peer
+    })
 });
 
 app.get('/', (req, res) => {
@@ -92,14 +93,14 @@ rtc = new SocketRTC({ url: 'http://localhost:8002' });
 
 rtc.on('connect', (id) => {
     console.log('connected');
-    rtc.send(JSON.stringify({ from: id, data: 'Hello, Peer!' }));
+    rtc.send('message', 'Hello, Peer!');
 });
 rtc.on('disconnect', () => {
     console.log('disconnected')
 });
 
 rtc.on('message', (data) => {
-    console.log(`message received: ${JSON.parse(data).data}`);
+    console.log(`message received: ${data}`);
 });
 
 rtc.on('error', (err) => {
