@@ -33,13 +33,13 @@ class SocketRTC {
             // Browser environment
             this._config = Object.assign({initiator: true}, rtcconfig);
             const socketioclient = require('socket.io-client');
-            this._socket = socketioclient(socketConfig.url);
+            this._socket = socketioclient(socketConfig.url, socketConfig.options);
             this.initializeClient();
         } else {
             // Node.js environment
             const wrtc = require('wrtc');
             this._config = Object.assign({ wrtc: wrtc }, rtcconfig);
-            this._io = require('socket.io')(socketConfig.server);
+            this._io = require('socket.io')(socketConfig.server, socketConfig.options);
             this._clients = {};
             this.initializeServer();
         }
