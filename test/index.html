@@ -29,8 +29,8 @@
 <body>
     <h1>SocketRTC Client</h1>
     <div class="main">
-        <!-- <button id="connect" >Connet</button>
-        <button id="disconnect">Disconnect</button> -->
+        <button id="connectButton" >Connet</button>
+        <button id="disconnectButton">Disconnect</button>
         <input id="message" type="text" class="message" placeholder="Enter message" />
         <button id="sendButton">Send</button>
         <div id="chat"></div>
@@ -61,6 +61,12 @@
 
             const sendButton = document.getElementById('sendButton');
             sendButton.addEventListener('click', onSend);
+
+            const connectButton = document.getElementById('connectButton');
+            connectButton.addEventListener('click', onConnectClick);
+
+            const disconnectButton = document.getElementById('disconnectButton');
+            disconnectButton.addEventListener('click', onDisconnectClick);
         // };
         function onSend() {
             const message = document.getElementsByClassName('message')[0].value;
@@ -99,6 +105,18 @@
             chat.appendChild(messageElement);
             // Ensure the latest message is in view
             chat.scrollTop = chat.scrollHeight;
+        }
+
+        function onConnectClick() {
+            if(rtc) {
+                rtc.connect();
+            }
+        }
+
+        function onDisconnectClick() {
+            if(rtc) {
+                rtc.disconnect();
+            }
         }
     </script>
 

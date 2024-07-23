@@ -63,7 +63,7 @@ class SocketRTC {
     initializeServer() {
         this._io.on('connection', (socket) => {
             this._socket = socket;
-            const peer = new SimplePeer(this._config);
+            let peer = new SimplePeer(this._config);
             const id = socket.id;
             peer.socketId = id;
             peer.events = new CustomEvents();
@@ -87,17 +87,73 @@ class SocketRTC {
             });
 
             peer.on('close', () => {
-                console.log('peerconnection closed');
+                console.log('peerconnection closed', peer.destroyed);
+                peer.removeAllListeners('connect');
+                peer.removeAllListeners('signal');
+                peer.removeAllListeners('data');
+                peer.removeAllListeners('close');
+                socket.removeAllListeners('signal');
+                peer.destroy();
                 delete this._clients[id];
+                this.connectPeer();
             });
 
             peer.on('error', (err) => {
                 this._emit('error', err);
             })
 
+            const getSignalCallback = () => {
+                return (peer, data) => {
+                    peer.signal(data);
+                }
+            }
+
             socket.on('signal', (data) => {
-                peer.signal(data);
+                getSignalCallback()(peer, data);
             });
+
+            const connectPeer = () => {
+                peer = new SimplePeer(this._config);
+                const id = socket.id;
+                peer.socketId = id;
+                peer.events = new CustomEvents();
+                peer.events.send = (event, ...args) => {
+                    peer.send(JSON.stringify([event, ...args]));
+                }
+                peer.on('connect', () => {
+                    this._emit('connect', peer);
+                });
+    
+                peer.on('signal', (data) => {
+                    this._socket.emit('signal', data);
+                });
+    
+                peer.on('data', (data) => {
+                    const [event, ...args] = JSON.parse(data);
+                    peer.events.emit(event, ...args);
+                });
+    
+                peer.on('close', () => {
+                    console.log('peerconnection closed');
+
+                    peer.removeAllListeners('connect');
+                    peer.removeAllListeners('signal');
+                    peer.removeAllListeners('data');
+                    peer.removeAllListeners('close');
+                    socket.removeAllListeners('signal');
+                    peer.destroy();
+                });
+    
+                peer.on('error', (err) => {
+                    this._emit('error', err);
+                })
+                this._clients[id] = peer;
+                socket.on('signal', (data) => {
+                    getSignalCallback()(peer, data);
+                });
+            }
+
+            this.connectPeer = connectPeer;
 
             socket.on("disconnect", async (event) => {
                 this._emit('disconnect', event);
@@ -169,7 +225,7 @@ class SocketRTC {
         this._socket.on('connect', () => {
             // console.log('socket connected');
         });
-        const peer = new SimplePeer(this._config);
+        let peer = new SimplePeer(this._config);
 
         // console.log(peer)
         peer.on('signal', (data) => {
@@ -186,6 +242,12 @@ class SocketRTC {
         });
 
         peer.on('close', () => {
+            // peer.destroy();
+            peer.removeAllListeners('connect');
+            peer.removeAllListeners('signal');
+            peer.removeAllListeners('data');
+            peer.removeAllListeners('close');
+            this._socket.removeAllListeners('signal');
             peer.destroy();
         });
 
@@ -214,6 +276,52 @@ class SocketRTC {
         }
 
         this.send = sendMessage;
+
+        const connect = () => {
+
+            peer = new SimplePeer(this._config);
+            // this._socket.emit('reconnect');
+
+            peer.on('connect', () => {
+                this._emit('connect', this._socket.id);
+            });
+    
+            peer.on('signal', (data) => {
+                this._socket.emit('signal', data);
+            });
+
+            peer.on('data', (data) => {
+                const [event, ...args] = JSON.parse(data);
+                this._emit(event, ...args);
+            });
+    
+            peer.on('close', () => {
+                console.log('peerconnection closed');
+
+                peer.removeAllListeners('connect');
+                peer.removeAllListeners('signal');
+                peer.removeAllListeners('data');
+                peer.removeAllListeners('close');
+                this._socket.removeAllListeners('signal');
+                peer.destroy();
+            });
+    
+            peer.on('error', (err) => {
+                this._emit('error', err);
+            })
+
+            this._socket.on('signal', (data) => {
+                peer.signal(data);
+            });
+        }
+        this.connect = connect;
+
+        const disconnect = () => {
+            if (peer) {
+                peer.destroy();
+            }
+        }
+        this.disconnect = disconnect;
     }
 
 }
