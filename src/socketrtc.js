@@ -75,6 +75,10 @@ class SocketRTC {
             // console.log('socket connected', socket.id);
             peer.on('connect', () => {
                 this._emit('connect', peer);
+                console.log('connected peers', Object.keys(this._clients).length);
+                Object.entries(this._clients).forEach(([key, value]) => {
+                    console.log(key, value.connected);
+                })
             });
 
             peer.on('signal', (data) => {
@@ -94,8 +98,11 @@ class SocketRTC {
                 peer.removeAllListeners('close');
                 socket.removeAllListeners('signal');
                 peer.destroy();
+                console.log('previousPeers ', Object.keys(this._clients).length);
                 delete this._clients[id];
-                this.connectPeer();
+                console.log('after delete ', Object.keys(this._clients).length);
+                if(socket.connected)
+                    this.connectPeer();
             });
 
             peer.on('error', (err) => {
@@ -134,7 +141,7 @@ class SocketRTC {
                 });
     
                 peer.on('close', () => {
-                    console.log('peerconnection closed');
+                    console.log('peer connection closed');
 
                     peer.removeAllListeners('connect');
                     peer.removeAllListeners('signal');
@@ -142,6 +149,8 @@ class SocketRTC {
                     peer.removeAllListeners('close');
                     socket.removeAllListeners('signal');
                     peer.destroy();
+                    if(socket.connected)
+                        this.connectPeer();
                 });
     
                 peer.on('error', (err) => {
@@ -260,6 +269,7 @@ class SocketRTC {
         });
 
         this._socket.on('disconnect', (event) => {
+            peer.destroy();
             this._emit('disconnect', event);
         });
 
